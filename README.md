@@ -1,4 +1,5 @@
 # DesignPatterns-KismonStudio
 Padrões de Projeto KismonStudio
 
-[Estrutura de Projetos com Cordova](/EstruturaDeProjetosCordova.md)
+- [Estrutura de Projetos com Cordova](/EstruturaDeProjetosCordova.md)
+- [Sistema de Efeitos Visuais Componentizados](/SistemaDeEfeitosVisuaisComponentizados.md)
