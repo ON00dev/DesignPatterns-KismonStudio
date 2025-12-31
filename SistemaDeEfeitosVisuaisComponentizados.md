@@ -65,6 +65,7 @@ Essa camada atua como:
 
 ## 5. Arquitetura Geral
 
+```text
 [ KismonStudio App ] 
 │ ├── Core / Engine 
 │ ├── WebGL Canvas (3D Scene) 
@@ -73,17 +74,18 @@ Essa camada atua como:
 ├── HitMarkerEffect 
 ├── DamageNumberEffect 
 └── Outros efeitos
-
+```
 ---
 
 ## 6. Estrutura de Projeto Recomendada
 
+```text
 /effects 
 ├── effects-layer.js 
 ├── text-explosion.effect.js 
 ├── hit-marker.effect.js 
 └── portal.effect.js
-
+```
 ---
 
 ## 7. Pattern: Effects Layer
