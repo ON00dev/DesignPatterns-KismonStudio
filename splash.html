@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>m</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    img {
+      opacity: 0;
+      max-width: 90%;
+      max-height: 90%;
+      transition: opacity 1s ease;
+      filter: none;
+      transform-origin: center center;
+    }
+
+    img.show {
+      opacity: 1;
+    }
+
+    @keyframes pulsar {
+      0% {
+        transform: scale(1);
+        filter: brightness(1) drop-shadow(0 0 0 #b22222);
+      }
+      50% {
+        transform: scale(1.05);
+        filter: brightness(1.5) drop-shadow(0 0 15px #b22222);
+      }
+      100% {
+        transform: scale(1.05);
+        filter: brightness(1.5) drop-shadow(0 0 15px #b22222);
+      }
+    }
+
+    img.pulsar {
+      animation: pulsar 0.5s ease-in-out 1;
+      animation-fill-mode: forwards;
+    }
+
+    img.hold-red {
+      transform: scale(1.05);
+      filter: brightness(1.5) drop-shadow(0 0 15px #b22222);
+    }
+  </style>
+</head>
+<body>
+  <img id="logo" src="img/kismon.png" alt="Kismon" />
+
+  <script>
+    let audioContext;
+    let sourceNode;
+    let gainNode;
+    let audioBuffer;
+    let isPlaying = false;
+
+    async function loadAndPlayMusic() {
+      try {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (!audioBuffer) {
+          const response = await fetch('sounds/celestial-effect.mp3');
+          const arrayBuffer = await response.arrayBuffer();
+          audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        }
+        if (sourceNode) {
+          sourceNode.disconnect();
+        }
+        sourceNode = audioContext.createBufferSource();
+        gainNode = audioContext.createGain();
+        gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+
+        sourceNode.buffer = audioBuffer;
+        sourceNode.loop = false; 
+        sourceNode.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        sourceNode.start(0);
+        isPlaying = true;
+
+        sourceNode.onended = () => {
+          isPlaying = false;
+        };
+      } catch (e) {
+        console.warn("Música bloqueada pelo navegador. Será necessário interação do usuário.");
+      }
+    }
+
+    function fadeOutAudio(duration = 1.5) {
+      if (!gainNode) return;
+      const now = audioContext.currentTime;
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+      gainNode.gain.linearRampToValueAtTime(0, now + duration);
+      setTimeout(() => {
+        if (sourceNode) sourceNode.stop();
+        isPlaying = false;
+      }, duration * 1000);
+    }
+
+    window.onload = () => {
+      const img = document.getElementById("logo");
+
+      setTimeout(() => {
+        img.classList.add("show");     
+      }, 2000);
+
+      setTimeout(() => {
+        img.classList.remove("pulsar");
+        void img.offsetWidth; 
+        loadAndPlayMusic();            
+        img.classList.add("pulsar");   
+      }, 2290);
+
+      setTimeout(() => {
+        img.classList.remove("pulsar");
+        img.classList.add("hold-red"); 
+      }, 3700);
+
+      setTimeout(() => {
+        img.classList.remove("show"); 
+      }, 6000);
+
+      setTimeout(() => {
+        fadeOutAudio(1.5); 
+      }, 5500);
+
+      setTimeout(() => {
+        window.location.href = "index.html";  redireciona
+      }, 7000);
+    };
+  </script>
+</body>
+</html>
