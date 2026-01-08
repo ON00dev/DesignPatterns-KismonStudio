@@ -1,5 +1,4 @@
-# 📘 KismonStudio Design Pattern  
-## Splash Screen KismonStudio
+# 📘 Splash Screen KismonStudio
 
 **Uso obrigatório:** Sim (apps e jogos Cordova)  
 **Responsável:** KismonStudio  
