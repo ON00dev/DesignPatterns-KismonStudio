@@ -1,5 +1,4 @@
-# 📐 KismonStudio — Design Patterns  
-## Estrutura de Projetos com Cordova (EPC)
+# 📐 Estrutura de Projetos com Cordova (EPC)
 
 ---
 
