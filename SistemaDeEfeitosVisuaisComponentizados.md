@@ -1,5 +1,4 @@
-# 📐 KismonStudio — Design Patterns  
-## Sistema de Efeitos Visuais Componentizados (Web / WebGL)
+# 📐 Sistema de Efeitos Visuais Componentizados (Web / WebGL)
 
 ---
 
