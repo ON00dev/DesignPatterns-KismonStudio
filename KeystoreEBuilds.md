@@ -1,6 +1,7 @@
-# 🔐 Design Pattern – Keystore & Builds
+# 🔐 Keystore & Builds
 Padrão de geração, preservação e reutilização de Keystore para builds Android assinados (Cordova).
 
+---
 ### 📌 Contexto
 Em aplicações Android, a chave de assinatura (Keystore) é o elemento mais crítico do ciclo de vida do app.
 Sem ela:
