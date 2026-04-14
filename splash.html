@@ -1,144 +1,256 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>m</title>
-  <style>
-    body {
-      margin: 0;
-      background-color: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kismon Studio</title>
 
-    img {
-      opacity: 0;
-      max-width: 90%;
-      max-height: 90%;
-      transition: opacity 1s ease;
-      filter: none;
-      transform-origin: center center;
-    }
+<style>
+:root {
+  --accent: #b22222;
+}
 
-    img.show {
-      opacity: 1;
-    }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100dvh;
+  font-family: sans-serif;
+}
 
-    @keyframes pulsar {
-      0% {
-        transform: scale(1);
-        filter: brightness(1) drop-shadow(0 0 0 #b22222);
-      }
-      50% {
-        transform: scale(1.05);
-        filter: brightness(1.5) drop-shadow(0 0 15px #b22222);
-      }
-      100% {
-        transform: scale(1.05);
-        filter: brightness(1.5) drop-shadow(0 0 15px #b22222);
-      }
-    }
+/* Canvas */
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
 
-    img.pulsar {
-      animation: pulsar 0.5s ease-in-out 1;
-      animation-fill-mode: forwards;
-    }
+/* UI */
+.container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: filter 1s ease, opacity 1s ease;
+}
 
-    img.hold-red {
-      transform: scale(1.05);
-      filter: brightness(1.5) drop-shadow(0 0 15px #b22222);
-    }
-  </style>
+.logo {
+  width: min(55vw, 260px);
+  opacity: 0;
+  transform: scale(0.92);
+  transition: all 1.2s ease;
+}
+
+.logo.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Glow mais sutil */
+.logo.glow {
+  filter: brightness(1.1) drop-shadow(0 0 8px var(--accent));
+}
+
+/* Loader */
+.loader {
+  margin-top: 24px;
+  width: min(180px, 60vw);
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* Fade cinematic */
+.fade-out {
+  opacity: 0;
+  filter: blur(12px);
+}
+</style>
 </head>
+
 <body>
-  <img id="logo" src="img/kismon.png" alt="Kismon" />
 
-  <script>
-    let audioContext;
-    let sourceNode;
-    let gainNode;
-    let audioBuffer;
-    let isPlaying = false;
+<canvas id="fog"></canvas>
+<canvas id="particles"></canvas>
 
-    async function loadAndPlayMusic() {
-      try {
-        if (!audioContext) {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (!audioBuffer) {
-          const response = await fetch('sounds/celestial-effect.mp3');
-          const arrayBuffer = await response.arrayBuffer();
-          audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        }
-        if (sourceNode) {
-          sourceNode.disconnect();
-        }
-        sourceNode = audioContext.createBufferSource();
-        gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+<div class="container" id="container">
+  <img id="logo" class="logo" src="img/kismon.png"/>
+  <div class="loader">
+    <div class="bar" id="bar"></div>
+  </div>
+</div>
 
-        sourceNode.buffer = audioBuffer;
-        sourceNode.loop = false; 
-        sourceNode.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+<script>
+// ===== CANVAS =====
+const fogCanvas = document.getElementById("fog");
+const pCanvas = document.getElementById("particles");
 
-        sourceNode.start(0);
-        isPlaying = true;
+const fogCtx = fogCanvas.getContext("2d");
+const pCtx = pCanvas.getContext("2d");
 
-        sourceNode.onended = () => {
-          isPlaying = false;
-        };
-      } catch (e) {
-        console.warn("Música bloqueada pelo navegador. Será necessário interação do usuário.");
-      }
-    }
+function resize() {
+  fogCanvas.width = innerWidth;
+  fogCanvas.height = innerHeight;
+  pCanvas.width = innerWidth;
+  pCanvas.height = innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
 
-    function fadeOutAudio(duration = 1.5) {
-      if (!gainNode) return;
-      const now = audioContext.currentTime;
-      gainNode.gain.cancelScheduledValues(now);
-      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-      gainNode.gain.linearRampToValueAtTime(0, now + duration);
-      setTimeout(() => {
-        if (sourceNode) sourceNode.stop();
-        isPlaying = false;
-      }, duration * 1000);
-    }
+// ===== NEBLINA SUAVE =====
+let fogOffset = 0;
 
-    window.onload = () => {
-      const img = document.getElementById("logo");
+function drawFog() {
+  fogOffset += 0.002;
 
-      setTimeout(() => {
-        img.classList.add("show");     
-      }, 2000);
+  const gradient = fogCtx.createRadialGradient(
+    innerWidth/2, innerHeight/2, 0,
+    innerWidth/2, innerHeight/2, innerWidth
+  );
 
-      setTimeout(() => {
-        img.classList.remove("pulsar");
-        void img.offsetWidth; 
-        loadAndPlayMusic();            
-        img.classList.add("pulsar");   
-      }, 2290);
+  gradient.addColorStop(0, "rgba(255,255,255,0.03)");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
 
-      setTimeout(() => {
-        img.classList.remove("pulsar");
-        img.classList.add("hold-red"); 
-      }, 3700);
+  fogCtx.clearRect(0,0,fogCanvas.width,fogCanvas.height);
+  fogCtx.fillStyle = gradient;
+  fogCtx.fillRect(0,0,fogCanvas.width,fogCanvas.height);
+}
 
-      setTimeout(() => {
-        img.classList.remove("show"); 
-      }, 6000);
+// ===== PARTICLES COM DEPTH =====
+const particles = [];
 
-      setTimeout(() => {
-        fadeOutAudio(1.5); 
-      }, 5500);
+for (let i = 0; i < 70; i++) {
+  particles.push({
+    x: Math.random() * innerWidth,
+    y: Math.random() * innerHeight,
+    z: Math.pow(Math.random(), 1.5), // mais partículas no fundo
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: (Math.random() - 0.5) * 0.15
+  });
+}
 
-      setTimeout(() => {
-        window.location.href = "index.html";  redireciona
-      }, 7000);
-    };
-  </script>
+function drawParticles(audioLevel=0) {
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+
+  for (let p of particles) {
+    const depth = p.z;
+
+    // movimento com parallax
+    p.x += p.vx * (0.2 + depth * 0.5);
+    p.y += p.vy * (0.2 + depth * 0.5);
+
+    if (p.x < 0 || p.x > innerWidth) p.vx *= -1;
+    if (p.y < 0 || p.y > innerHeight) p.vy *= -1;
+
+    // tamanho baseado na profundidade
+    const baseSize = 0.6 + depth * 2;
+
+    // reação leve ao áudio
+    const size = baseSize * (1 + audioLevel * 0.25);
+
+    // opacidade suave
+    const alpha = 0.03 + depth * 0.18;
+
+    // blur baseado na profundidade (bokeh)
+    const blur = depth * 8;
+
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, size, 0, Math.PI * 2);
+
+    pCtx.fillStyle = `rgba(220,220,220,${alpha})`;
+    pCtx.shadowColor = `rgba(255,255,255,${alpha})`;
+    pCtx.shadowBlur = blur;
+
+    pCtx.fill();
+
+    // reset shadow pra não afetar tudo
+    pCtx.shadowBlur = 0;
+  }
+}
+
+// ===== AUDIO =====
+let analyser, dataArray;
+
+async function setupAudio() {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+  const res = await fetch("sounds/effects/celestial-effect.mp3");
+  const buffer = await res.arrayBuffer();
+  const decoded = await ctx.decodeAudioData(buffer);
+
+  const source = ctx.createBufferSource();
+  analyser = ctx.createAnalyser();
+
+  analyser.fftSize = 64;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+  source.buffer = decoded;
+  source.connect(analyser);
+  analyser.connect(ctx.destination);
+
+  source.start();
+}
+
+// ===== LOOP =====
+const logo = document.getElementById("logo");
+const bar = document.getElementById("bar");
+
+let progress = 0;
+
+function loop() {
+  requestAnimationFrame(loop);
+
+  drawFog();
+
+  let audioLevel = 0;
+  if (analyser) {
+    analyser.getByteFrequencyData(dataArray);
+    audioLevel = dataArray.reduce((a,b)=>a+b,0) / dataArray.length / 255;
+  }
+
+  // glow sutil
+  logo.style.filter = `brightness(${1 + audioLevel*0.3}) drop-shadow(0 0 ${6 + audioLevel*20}px #b22222)`;
+
+  drawParticles(audioLevel);
+
+  // loader
+  if (progress < 100) {
+    progress += 0.3 + audioLevel;
+    bar.style.width = progress + "%";
+  }
+}
+
+loop();
+
+// ===== TIMELINE =====
+const container = document.getElementById("container");
+
+window.onload = () => {
+  setTimeout(() => logo.classList.add("show"), 400);
+
+  setTimeout(() => setupAudio(), 200);
+
+  // cinematic exit
+  setTimeout(() => {
+    container.classList.add("fade-out");
+  }, 5200);
+
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 6200);
+};
+</script>
+
 </body>
 </html>
